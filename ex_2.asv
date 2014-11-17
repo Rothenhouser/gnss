@@ -44,12 +44,12 @@ for i=1:length(epochs);
     A(:,3)=dPdz(i,:);
     A(:,4)=cs;
     % Solve normal equation.
-    deltay(i,:) = c1_corrected(i,:) - rho_sr(i,:);
+    deltay = c1_corrected(i,:);
     atransp = transpose(A);
     N = atransp*A;
-    deltap(:,i) = (N \ atransp) * transpose(deltay(i,:));
+    deltap(:,i) = (N \ atransp) * transpose(deltay);
     % Compute the residuals.
-    epsilon(:,i) = transpose(deltay(i,:)) - (A * deltap(:,i));
+    epsilon(:,i) = transpose(deltay) - (A * deltap(:,i));
     m0(:,i) = sqrt(transpose(epsilon(:,i)) * epsilon(:,i) ./ 3);
     sigmax(:,i) = m0(:,i) * Q(1,1);
     sigmay(:,i) = m0(:,i) * Q(2,2);
