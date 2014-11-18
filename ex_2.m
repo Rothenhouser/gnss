@@ -54,7 +54,7 @@ for i=1:length(epochs);
     epsilon(:,i) = transpose(deltay(i,:)) - (A * deltap(:,i));
     m0(:,i) = sqrt(transpose(epsilon(:,i)) * epsilon(:,i) ./ 3);
     % Formal errors
-    Q = inv(N);
+    Q = N \ eye(size(N));  %changed, so singularity warning doesn't show 
     sigmax(:,i) = m0(:,i) * Q(1,1);
     sigmay(:,i) = m0(:,i) * Q(2,2);
     sigmaz(:,i) = m0(:,i) * Q(3,3);
