@@ -20,8 +20,7 @@ epochs = epochs(:,1);
 % Raw geometric distance:
 rho_sr_raw = sqrt((wank_xs_raw - wank_xr).^2 ...
 + (wank_ys_raw - wank_yr).^2 + (wank_zs_raw - wank_zr).^2);
-%dOmega = rho_sr_raw * earth_rot_rate / c;
-dOmega = 0
+dOmega = rho_sr_raw * earth_rot_rate / c;
 % Correct the coordinates.
 wank_xs = wank_xs_raw .* cos(dOmega) + wank_ys_raw .* sin(dOmega);
 wank_ys = - wank_xs_raw .* sin(dOmega) + wank_ys_raw .* cos(dOmega);
@@ -46,7 +45,7 @@ for i=1:length(epochs);
     A(:,3)=dPdz(i,:);
     A(:,4)=cs;
     % Solve normal equation.
-    deltay(i,:) = c1_corrected(i,:) - rho_sr(i,:);
+    deltay(i,:) = c1_corrected(i,:) - rho_sr(i,:); %#ok<*SAGROW>
     atransp = transpose(A);
     N = atransp*A;
     deltap(:,i) = (N \ atransp) * transpose(deltay(i,:));
