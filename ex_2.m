@@ -95,7 +95,7 @@ cos_z = (wank_xr_gps./xyz) .* (wank_xs - wank_xr_gps)./rho_sr ...
 % Tropospheric correction:
 tropo_corr = 2.3 ./ cos_z;
 % Apply correction.
-c1_corr_tropo = wank_c1 + (c * wank_satt) + tropo_corr;
+c1_corr_tropo = wank_c1 + (c * wank_satt) + tropo_corr; %addition of tropo_corr is correct!
 % Redo the coordinate calculation.
 % Call least-squares again as function (?)
 
@@ -114,6 +114,7 @@ for i = 1:length(epochs)-1;
     inert_vel_y_corrected(i,:) = inert_vel_y(i,:) + earth_rot_rate .* wank_xs(i,:);
     inert_vel_z_corrected(i,:) = inert_vel_z(i,:);
 end
+
 % Discard last epoch from sattelite postions to have same matrix dimensions
 wank_xs_short = wank_xs(1:end-1,:);
 wank_ys_short = wank_ys(1:end-1,:);
