@@ -2,9 +2,9 @@
 % Speed of light (m/s)
 c = 299792458;
 % Time step between epochs
-dt = 30.0
+dt = 30.0;
 % Number of satellites
-ns = 7
+ns = 7;
 % Earth rotation rate (rad/s)
 earth_rot_rate = 7.2921151467E-5;
 % A priori receiver coordinates (m)
@@ -95,7 +95,7 @@ cos_z = (wank_xr_gps./xyz) .* (wank_xs - wank_xr_gps)./rho_sr ...
 % Tropospheric correction:
 tropo_corr = 2.3 ./ cos_z;
 % Apply correction.
-c1_corr_tropo = wank_c1 + (c * wank_satt) + tropo_corr; % Or subtract???
+c1_corr_tropo = wank_c1 + (c * wank_satt) + tropo_corr;
 % Redo the coordinate calculation.
 % Call least-squares again as function (?)
 
@@ -103,22 +103,27 @@ c1_corr_tropo = wank_c1 + (c * wank_satt) + tropo_corr; % Or subtract???
 % All the corrections need to be applied to the pseudorange observations
 % before the LS-alogrithm is executed???
 % Compute satellite inertial velocities:
-delta_epoch = 30.0
+delta_epoch = 30.0;
 for i = 1:length(epochs)-1;
-    % uses 2point finite differences -> no derivative for last epoch!
-    inert_vel_x(i,:) = (wank_xs(i+1,:) - wank_xs(i,:)) / dt
-    inert_vel_y(i,:) = (wank_ys(i+1,:) - wank_ys(i,:)) / dt
-    inert_vel_z(i,:) = (wank_zs(i+1,:) - wank_zs(i,:)) / dt
+    % uses 2point finite differences -> no derivative for last epoch!    
+    inert_vel_x(i,:) = (wank_xs(i+1,:) - wank_xs(i,:)) / dt;
+    inert_vel_y(i,:) = (wank_ys(i+1,:) - wank_ys(i,:)) / dt;
+    inert_vel_z(i,:) = (wank_zs(i+1,:) - wank_zs(i,:)) / dt;
+    % Correct for earth's rotation
+    inert_vel_x_corrected(i,:) = inert_vel_x(i,:) - earth_rot_rate .* wank_ys(i,:);
+    inert_vel_y_corrected(i,:) = inert_vel_y(i,:) + earth_rot_rate .* wank_xs(i,:);
+    inert_vel_z_corrected(i,:) = inert_vel_z(i,:);
 end
 % Discard last epoch from sattelite postions to have same matrix dimensions
-wank_xs_short = wank_xs(1:end-1,:)
-wank_ys_short = wank_ys(1:end-1,:)
-wank_zs_short = wank_zs(1:end-1,:)
+wank_xs_short = wank_xs(1:end-1,:);
+wank_ys_short = wank_ys(1:end-1,:);
+wank_zs_short = wank_zs(1:end-1,:);
+
 % Compute relativistic correction according to given formula
 for i = 1:ns;
-    delta_tk(:,i) = -2 * (wank_xs_short(:,i) .* inert_vel_x(:,i) ...
-        + wank_ys_short(:,i) .* inert_vel_y(:,i) ...
-        + wank_zs_short(:,i) .* inert_vel_z(:,i)) / c^2
+    delta_tk(:,i) = -2 * (wank_xs_short(:,i) .* inert_vel_x_corrected(:,i) ...
+        + wank_ys_short(:,i) .* inert_vel_y_corrected(:,i) ...
+        + wank_zs_short(:,i) .* inert_vel_z_corrected(:,i)) / c^2;
     % relativistic correction in meters
-    delta_tk_m(:,i) = delta_tk(:,i) .* c
+    delta_tk_m(:,i) = delta_tk(:,i) .* c;
 end
