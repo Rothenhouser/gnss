@@ -57,17 +57,9 @@ end
 
 %% 3 (a): Correct satellite positions for Earth rotation during light
 %% travel time.
-% Raw geometric distance:
-rho_sr_raw = sqrt((stn_xs_raw - stn_xr).^2 ...
-+ (stn_ys_raw - stn_yr).^2 + (stn_zs_raw - stn_zr).^2);
-dOmega = rho_sr_raw * earth_rot_rate / c;
-% Correct the coordinates.
-stn_xs = stn_xs_raw .* cos(dOmega) + stn_ys_raw .* sin(dOmega);
-stn_ys = - stn_xs_raw .* sin(dOmega) + stn_ys_raw .* cos(dOmega);
-stn_zs = stn_zs_raw;
-% Recompute the geometric distance.
-rho_sr = sqrt((stn_xs - stn_xr).^2 ...
-+ (stn_ys - stn_yr).^2 + (stn_zs - stn_zr).^2);
+[stn_xs2, stn_ys2, stn_zs2, rho_sr2] = correctLightTravelTime(stn_xs_raw, ...
+    stn_ys_raw, stn_zs_raw, stn_xr, stn_yr, stn_zr, earth_rot_rate, c);
+
 %% 3 (b) Compute the derivates of the observation equation.
 % Todo: change this back to c? Need to adjust calculations below!
 dPdt = 1;
@@ -79,26 +71,26 @@ dPdz = -(stn_zs - stn_zr) ./ rho_sr;
 c1_corrected = stn_c1 + (c * stn_satt); % changed sign before bracket
 %% Solve the normal equations.
 for i=1:length(epochs);
-% Setup the grand design matrix A for every epoch.
-A(:,1)=dPdx(i,:);
-A(:,2)=dPdy(i,:);
-A(:,3)=dPdz(i,:);
-A(:,4)=cs;
-% Solve normal equation.
-deltay(i,:) = c1_corrected(i,:) - rho_sr(i,:); %#ok<*SAGROW>
-atransp = transpose(A);
-N = atransp*A;
-% deltap are the deviations of computed from a priori coordinates.
-deltap(:,i) = (N \ atransp) * transpose(deltay(i,:));
-% Compute the residuals.
-epsilon(:,i) = transpose(deltay(i,:)) - (A * deltap(:,i));
-m0(:,i) = sqrt(transpose(epsilon(:,i)) * epsilon(:,i) ./ 3);
-% Formal errors
-Q = N \ eye(size(N)); %changed, so singularity warning doesn't show
-sigmax(:,i) = m0(:,i) * Q(1,1);
-sigmay(:,i) = m0(:,i) * Q(2,2);
-sigmaz(:,i) = m0(:,i) * Q(3,3);
-sigmat(:,i) = m0(:,i) * Q(4,4);
+    % Setup the grand design matrix A for every epoch.
+    A(:,1)=dPdx(i,:);
+    A(:,2)=dPdy(i,:);
+    A(:,3)=dPdz(i,:);
+    A(:,4)=cs;
+    % Solve normal equation.
+    deltay(i,:) = c1_corrected(i,:) - rho_sr(i,:); %#ok<*SAGROW>
+    atransp = transpose(A);
+    N = atransp*A;
+    % deltap are the deviations of computed from a priori coordinates.
+    deltap(:,i) = (N \ atransp) * transpose(deltay(i,:));
+    % Compute the residuals.
+    epsilon(:,i) = transpose(deltay(i,:)) - (A * deltap(:,i));
+    m0(:,i) = sqrt(transpose(epsilon(:,i)) * epsilon(:,i) ./ 3);
+    % Formal errors
+    Q = N \ eye(size(N)); %changed, so singularity warning doesn't show
+    sigmax(:,i) = m0(:,i) * Q(1,1);
+    sigmay(:,i) = m0(:,i) * Q(2,2);
+    sigmaz(:,i) = m0(:,i) * Q(3,3);
+    sigmat(:,i) = m0(:,i) * Q(4,4);
 end
 %% Calculate station coordinates for each epoch.
 % Add or subtract the difference???
@@ -119,21 +111,21 @@ c1_corr_tropo = correctTroposphere(stn_c1, stn_satt, ...
     stn_single_gps_coords, stn_xs, stn_ys, stn_zs, c);
 % Redo the coordinate calculation.
 % Call least-squares again as function (?)
-% Part B, 2.3
+
+%% Part B, 2.3
 % All the corrections need to be applied to the pseudorange observations
 % before the LS-alogrithm is executed???
-
 % Compute satellite inertial velocities:
 delta_epoch = 30.0;
 for i = 1:length(epochs)-1;
-% uses 2point finite differences -> no derivative for last epoch!
-inert_vel_x(i,:) = (stn_xs(i+1,:) - stn_xs(i,:)) / dt;
-inert_vel_y(i,:) = (stn_ys(i+1,:) - stn_ys(i,:)) / dt;
-inert_vel_z(i,:) = (stn_zs(i+1,:) - stn_zs(i,:)) / dt;
-% Correct for earth's rotation
-inert_vel_x_corrected(i,:) = inert_vel_x(i,:) - earth_rot_rate .* stn_ys(i,:);
-inert_vel_y_corrected(i,:) = inert_vel_y(i,:) + earth_rot_rate .* stn_xs(i,:);
-inert_vel_z_corrected(i,:) = inert_vel_z(i,:);
+    % uses 2point finite differences -> no derivative for last epoch!
+    inert_vel_x(i,:) = (stn_xs(i+1,:) - stn_xs(i,:)) / dt;
+    inert_vel_y(i,:) = (stn_ys(i+1,:) - stn_ys(i,:)) / dt;
+    inert_vel_z(i,:) = (stn_zs(i+1,:) - stn_zs(i,:)) / dt;
+    % Correct for earth's rotation
+    inert_vel_x_corrected(i,:) = inert_vel_x(i,:) - earth_rot_rate .* stn_ys(i,:);
+    inert_vel_y_corrected(i,:) = inert_vel_y(i,:) + earth_rot_rate .* stn_xs(i,:);
+    inert_vel_z_corrected(i,:) = inert_vel_z(i,:);
 end
 % Discard last epoch from sattelite postions to have same matrix dimensions
 stn_xs_short = stn_xs(1:end-1,:);
@@ -141,9 +133,9 @@ stn_ys_short = stn_ys(1:end-1,:);
 stn_zs_short = stn_zs(1:end-1,:);
 % Compute relativistic correction according to given formula
 for i = 1:ns;
-delta_tk(:,i) = -2 * (stn_xs_short(:,i) .* inert_vel_x_corrected(:,i) ...
-+ stn_ys_short(:,i) .* inert_vel_y_corrected(:,i) ...
-+ stn_zs_short(:,i) .* inert_vel_z_corrected(:,i)) / c^2;
-% relativistic correction in meters
-delta_tk_m(:,i) = delta_tk(:,i) .* c;
+    delta_tk(:,i) = -2 * (stn_xs_short(:,i) .* inert_vel_x_corrected(:,i) ...
+    + stn_ys_short(:,i) .* inert_vel_y_corrected(:,i) ...
+    + stn_zs_short(:,i) .* inert_vel_z_corrected(:,i)) / c^2;
+    % relativistic correction in meters
+    delta_tk_m(:,i) = delta_tk(:,i) .* c;
 end
