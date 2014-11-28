@@ -8,7 +8,7 @@ ns = 7;
 % Earth rotation rate (rad/s)
 earth_rot_rate = 7.2921151467E-5;
 
-epochs = importdata('Epochs.txt');
+epochs = importdata('data/Epochs.txt');
 epochs = epochs(:,1);
 
 %% Station specific data.
@@ -17,21 +17,21 @@ wank_xr = 4235956.688;
 wank_yr = 834342.467;
 wank_zr = 4681540.682;
 % Recorded data
-wank_c1 = importdata('WANK_C1');
-wank_satt = importdata('WANK_SATT');
-wank_xs_raw = importdata('WANK_SATX');
-wank_ys_raw = importdata('WANK_SATY');
-wank_zs_raw = importdata('WANK_SATZ');
+wank_c1 = importdata('data/WANK_C1');
+wank_satt = importdata('data/WANK_SATT');
+wank_xs_raw = importdata('data/WANK_SATX');
+wank_ys_raw = importdata('data/WANK_SATY');
+wank_zs_raw = importdata('data/WANK_SATZ');
 
 zugs_xr = 4246098.549;
 zugs_yr = 824269.097;
 zugs_zr = 4675790.018;
 % Recorded data
-zugs_c1 = importdata('ZUGS_C1');
-zugs_satt = importdata('ZUGS_SATT');
-zugs_xs_raw = importdata('ZUGS_SATX');
-zugs_ys_raw = importdata('ZUGS_SATY');
-zugs_zs_raw = importdata('ZUGS_SATZ');
+zugs_c1 = importdata('data/ZUGS_C1');
+zugs_satt = importdata('data/ZUGS_SATT');
+zugs_xs_raw = importdata('data/ZUGS_SATX');
+zugs_ys_raw = importdata('data/ZUGS_SATY');
+zugs_zs_raw = importdata('data/ZUGS_SATZ');
 
 
 stn = 'zugs';
