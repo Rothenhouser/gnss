@@ -102,8 +102,11 @@ stn_zr + deltap(3,:)];
 
 %% B: 2.1 Single set of coordinates.
 % Simply average coordinates?
+[stn_xs2, stn_ys2, stn_zs2, rho_sr2] = correctLightTravelTime(stn_xs_raw, ...
+    stn_ys_raw, stn_zs_raw, stn_xr, stn_yr, stn_zr, earth_rot_rate, c);
 stn_single_gps_coords = [mean(stn_gps_coords(1,:)); ...
 mean(stn_gps_coords(2,:)); mean(stn_gps_coords(3,:))];
+
 % "Again give coordinate corrections and the formal errors."
 
 %% Calculate coordinates with tropospheric correction.
