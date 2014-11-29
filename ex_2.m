@@ -88,13 +88,21 @@ stn_single_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
 % "Again give coordinate corrections and the formal errors."
 
 %% Calculate coordinates with tropospheric correction.
-c1_corr_tropo = correctTroposphere(stn_c1, stn_satt, ...
+c1_corrected = correctTroposphere(stn_c1, stn_satt, ...
     stn_single_gps_coords, stn_xs, stn_ys, stn_zs, c);
 % Redo the coordinate calculation.
 % Call least-squares again as function (?)
 
-%% Part B, 2.3
+%% Part B, 2.3 Correct relativity
 % All the corrections need to be applied to the pseudorange observations
 % before the LS-alogrithm is executed???
-[c1_corr_relativ] = correctRelativity(epochs, stn_xs, stn_ys, stn_zs, ...
+c1_corr_relativ = correctRelativity(epochs, stn_xs, stn_ys, stn_zs, ...
     earth_rot_rate, c);
+
+c1_corrected = c1_corrected + c1_corr_relativ; % Or subtract??
+
+%% Recalculate receiver coordinates.
+[deltap, epsilon, sigma] = calcSingleCoordinates(dPdx, ...
+    dPdy, dPdz, dPdt, c1_corrected, rho_sr, epochs);
+stn_single_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
+    stn_zr + deltap(3,:)];
