@@ -1,6 +1,7 @@
 function [deltap, epsilon, sigma] = calcSingleCoordinates(dPdx, ...
-    dPdy, dPdz, dPdt, c1_corrected, rho_sr, ns, epochs)
+    dPdy, dPdz, dPdt, c1_corrected, rho_sr, epochs)
 
+ns = length(rho_sr(1,:));
 % Setup the grand design matrix A -> estimate only one set of coordinates
 A = zeros(length(epochs) * ns, length(epochs) + 3);
 it = 1;

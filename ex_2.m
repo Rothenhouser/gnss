@@ -1,3 +1,6 @@
+clear all
+close all
+
 % Constants
 % Speed of light (m/s)
 c = 299792458;
@@ -57,55 +60,33 @@ end
 
 %% 3 (a): Correct satellite positions for Earth rotation during light
 %% travel time.
-[stn_xs2, stn_ys2, stn_zs2, rho_sr2] = correctLightTravelTime(stn_xs_raw, ...
+[stn_xs, stn_ys, stn_zs, rho_sr] = correctLightTravelTime(stn_xs_raw, ...
     stn_ys_raw, stn_zs_raw, stn_xr, stn_yr, stn_zr, earth_rot_rate, c);
 
 %% 3 (b) Compute the derivates of the observation equation.
 % Todo: change this back to c? Need to adjust calculations below!
 dPdt = 1;
-cs =[1 1 1 1 1 1 1] * dPdt;
 dPdx = -(stn_xs - stn_xr) ./ rho_sr;
 dPdy = -(stn_ys - stn_yr) ./ rho_sr;
 dPdz = -(stn_zs - stn_zr) ./ rho_sr;
 % Correct pseudorange data with satellite clock correction.
 c1_corrected = stn_c1 + (c * stn_satt); % changed sign before bracket
-%% Solve the normal equations.
-for i=1:length(epochs);
-    % Setup the grand design matrix A for every epoch.
-    A(:,1)=dPdx(i,:);
-    A(:,2)=dPdy(i,:);
-    A(:,3)=dPdz(i,:);
-    A(:,4)=cs;
-    % Solve normal equation.
-    deltay(i,:) = c1_corrected(i,:) - rho_sr(i,:); %#ok<*SAGROW>
-    atransp = transpose(A);
-    N = atransp*A;
-    % deltap are the deviations of computed from a priori coordinates.
-    deltap(:,i) = (N \ atransp) * transpose(deltay(i,:));
-    % Compute the residuals.
-    epsilon(:,i) = transpose(deltay(i,:)) - (A * deltap(:,i));
-    m0(:,i) = sqrt(transpose(epsilon(:,i)) * epsilon(:,i) ./ 3);
-    % Formal errors
-    Q = N \ eye(size(N)); %changed, so singularity warning doesn't show
-    sigmax(:,i) = m0(:,i) * Q(1,1);
-    sigmay(:,i) = m0(:,i) * Q(2,2);
-    sigmaz(:,i) = m0(:,i) * Q(3,3);
-    sigmat(:,i) = m0(:,i) * Q(4,4);
-end
+
 %% Calculate station coordinates for each epoch.
-% Add or subtract the difference???
+[deltap, epsilon, sigmax, sigmay, sigmaz, sigmat] = ...
+    calcEpochCoordinates(dPdx, dPdy, dPdz, dPdt, c1_corrected, ...
+    rho_sr, epochs);
 stn_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
-stn_zr + deltap(3,:)];
+    stn_zr + deltap(3,:)];
 %% For ex 2.2: Plot satellite positions to perhaps explain why y accuracy
 %% is better than x?
 % Drift may be because troposphere not yet corrected and not constant??
 
 %% B: 2.1 Single set of coordinates.
-% Simply average coordinates?
-[stn_xs2, stn_ys2, stn_zs2, rho_sr2] = correctLightTravelTime(stn_xs_raw, ...
-    stn_ys_raw, stn_zs_raw, stn_xr, stn_yr, stn_zr, earth_rot_rate, c);
-stn_single_gps_coords = [mean(stn_gps_coords(1,:)); ...
-mean(stn_gps_coords(2,:)); mean(stn_gps_coords(3,:))];
+[deltap, epsilon, sigma] = calcSingleCoordinates(dPdx, ...
+    dPdy, dPdz, dPdt, c1_corrected, rho_sr, epochs);
+stn_single_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
+    stn_zr + deltap(3,:)];
 
 % "Again give coordinate corrections and the formal errors."
 
