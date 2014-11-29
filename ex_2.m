@@ -4,10 +4,7 @@ close all
 % Constants
 % Speed of light (m/s)
 c = 299792458;
-% Time step between epochs
-dt = 30.0;
-% Number of satellites
-ns = 7;
+
 % Earth rotation rate (rad/s)
 earth_rot_rate = 7.2921151467E-5;
 
@@ -29,7 +26,6 @@ wank_zs_raw = importdata('data/WANK_SATZ');
 zugs_xr = 4246098.549;
 zugs_yr = 824269.097;
 zugs_zr = 4675790.018;
-% Recorded data
 zugs_c1 = importdata('data/ZUGS_C1');
 zugs_satt = importdata('data/ZUGS_SATT');
 zugs_xs_raw = importdata('data/ZUGS_SATX');
@@ -78,6 +74,7 @@ c1_corrected = stn_c1 + (c * stn_satt); % changed sign before bracket
     rho_sr, epochs);
 stn_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
     stn_zr + deltap(3,:)];
+
 %% For ex 2.2: Plot satellite positions to perhaps explain why y accuracy
 %% is better than x?
 % Drift may be because troposphere not yet corrected and not constant??
@@ -99,27 +96,5 @@ c1_corr_tropo = correctTroposphere(stn_c1, stn_satt, ...
 %% Part B, 2.3
 % All the corrections need to be applied to the pseudorange observations
 % before the LS-alogrithm is executed???
-% Compute satellite inertial velocities:
-delta_epoch = 30.0;
-for i = 1:length(epochs)-1;
-    % uses 2point finite differences -> no derivative for last epoch!
-    inert_vel_x(i,:) = (stn_xs(i+1,:) - stn_xs(i,:)) / dt;
-    inert_vel_y(i,:) = (stn_ys(i+1,:) - stn_ys(i,:)) / dt;
-    inert_vel_z(i,:) = (stn_zs(i+1,:) - stn_zs(i,:)) / dt;
-    % Correct for earth's rotation
-    inert_vel_x_corrected(i,:) = inert_vel_x(i,:) - earth_rot_rate .* stn_ys(i,:);
-    inert_vel_y_corrected(i,:) = inert_vel_y(i,:) + earth_rot_rate .* stn_xs(i,:);
-    inert_vel_z_corrected(i,:) = inert_vel_z(i,:);
-end
-% Discard last epoch from sattelite postions to have same matrix dimensions
-stn_xs_short = stn_xs(1:end-1,:);
-stn_ys_short = stn_ys(1:end-1,:);
-stn_zs_short = stn_zs(1:end-1,:);
-% Compute relativistic correction according to given formula
-for i = 1:ns;
-    delta_tk(:,i) = -2 * (stn_xs_short(:,i) .* inert_vel_x_corrected(:,i) ...
-    + stn_ys_short(:,i) .* inert_vel_y_corrected(:,i) ...
-    + stn_zs_short(:,i) .* inert_vel_z_corrected(:,i)) / c^2;
-    % relativistic correction in meters
-    delta_tk_m(:,i) = delta_tk(:,i) .* c;
-end
+[c1_corr_relativ] = correctRelativity(epochs, stn_xs, stn_ys, stn_zs, ...
+    earth_rot_rate, c);

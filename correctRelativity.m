@@ -1,4 +1,8 @@
-function [c1_corr_relativ] = correctRelativity(epochs, stn_xs, stn_ys, stn_zs, earth_rot_rate)
+function [c1_corr_relativ] = correctRelativity(epochs, stn_xs, stn_ys, stn_zs, earth_rot_rate, c)
+% Time step between epochs
+dt = 30.0;
+% Number of satellites
+ns = length(stn_xs(1,:));
 for i = 1:length(epochs)-1;
     % uses 2point finite differences -> no derivative for last epoch!
     inert_vel_x(i,:) = (stn_xs(i+1,:) - stn_xs(i,:)) / dt;
