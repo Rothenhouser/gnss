@@ -1,14 +1,14 @@
 function [deltap, epsilon, sigmax, sigmay, sigmaz, sigmat] = ...
     calcEpochCoordinates(dPdx, dPdy, dPdz, dPdt, c1_corrected, ...
     rho_sr, epochs)
-cs =[1 1 1 1 1 1 1] * dPdt;
+
 %% Solve the normal equations.
 for i=1:length(epochs);
     % Setup the grand design matrix A for every epoch.
     A(:,1)=dPdx(i,:);
     A(:,2)=dPdy(i,:);
     A(:,3)=dPdz(i,:);
-    A(:,4)=cs;
+    A(:,4)=[1 1 1 1 1 1 1] * dPdt;
     % Solve normal equation.
     deltay(i,:) = c1_corrected(i,:) - rho_sr(i,:); %#ok<*SAGROW>
     atransp = transpose(A);

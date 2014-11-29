@@ -33,71 +33,88 @@ zugs_ys_raw = importdata('data/ZUGS_SATY');
 zugs_zs_raw = importdata('data/ZUGS_SATZ');
 
 
-stn = 'zugs';
-if strcmp(stn, 'wank');
-    stn_xr = wank_xr;
-    stn_yr = wank_yr;
-    stn_zr = wank_zr;
-    stn_c1 = wank_c1;
-    stn_satt = wank_satt;
-    stn_xs_raw = wank_xs_raw;
-    stn_ys_raw = wank_ys_raw;
-    stn_zs_raw = wank_zs_raw;
-elseif strcmp(stn, 'zugs');
-    stn_xr = zugs_xr;
-    stn_yr = zugs_yr;
-    stn_zr = zugs_zr;
-    stn_c1 = zugs_c1;
-    stn_satt = zugs_satt;
-    stn_xs_raw = zugs_xs_raw;
-    stn_ys_raw = zugs_ys_raw;
-    stn_zs_raw = zugs_zs_raw;        
+for stn = {'zugs', 'wank'};
+    if strcmp(stn, 'wank');
+        stn_xr = wank_xr;
+        stn_yr = wank_yr;
+        stn_zr = wank_zr;
+        stn_c1 = wank_c1;
+        stn_satt = wank_satt;
+        stn_xs_raw = wank_xs_raw;
+        stn_ys_raw = wank_ys_raw;
+        stn_zs_raw = wank_zs_raw;
+    elseif strcmp(stn, 'zugs');
+        stn_xr = zugs_xr;
+        stn_yr = zugs_yr;
+        stn_zr = zugs_zr;
+        stn_c1 = zugs_c1;
+        stn_satt = zugs_satt;
+        stn_xs_raw = zugs_xs_raw;
+        stn_ys_raw = zugs_ys_raw;
+        stn_zs_raw = zugs_zs_raw;        
+    end
+
+    %% 3 (a): Correct satellite positions for Earth rotation during light
+    %% travel time.
+    [stn_xs, stn_ys, stn_zs, rho_sr] = correctLightTravelTime(stn_xs_raw, ...
+        stn_ys_raw, stn_zs_raw, stn_xr, stn_yr, stn_zr, earth_rot_rate, c);
+
+    %% 3 (b) Compute the derivates of the observation equation.
+    % Todo: change this back to c? Need to adjust calculations below!
+    dPdt = 1;
+    dPdx = -(stn_xs - stn_xr) ./ rho_sr;
+    dPdy = -(stn_ys - stn_yr) ./ rho_sr;
+    dPdz = -(stn_zs - stn_zr) ./ rho_sr;
+    % Correct pseudorange data with satellite clock correction.
+    c1_corrected = stn_c1 + (c * stn_satt); % changed sign before bracket
+
+    %% Calculate station coordinates for each epoch.
+    [deltap, epsilon, sigmax, sigmay, sigmaz, sigmat] = ...
+        calcEpochCoordinates(dPdx, dPdy, dPdz, dPdt, c1_corrected, ...
+        rho_sr, epochs);
+    stn_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
+        stn_zr + deltap(3,:)];
+
+    %% For ex 2.2: Plot satellite positions to perhaps explain why y accuracy
+    %% is better than x?
+    % Drift may be because troposphere not yet corrected and not constant??
+
+    %% B: 2.1 Single set of coordinates.
+    [deltap, epsilon, sigma] = calcSingleCoordinates(dPdx, ...
+        dPdy, dPdz, dPdt, c1_corrected, rho_sr, epochs);
+    stn_single_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
+        stn_zr + deltap(3,:)];
+
+    %% Calculate tropospheric correction.
+    tropo_corr = correctTroposphere(stn_c1, stn_satt, ...
+        stn_single_gps_coords, stn_xs, stn_ys, stn_zs, c);
+
+    %% Part B, 2.3 Calculate relativity correction.
+    relativistic_corr = correctRelativity(epochs, stn_xs, stn_ys, stn_zs, ...
+        earth_rot_rate, c);
+
+    %% Apply corrections.
+    c1_corrected = stn_c1 + (c * stn_satt) + tropo_corr + relativistic_corr; 
+    
+    %% Recalculate receiver coordinates.
+    [deltap, epsilon, sigma] = calcSingleCoordinates(dPdx, ...
+        dPdy, dPdz, dPdt, c1_corrected, rho_sr, epochs);
+    stn_single_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
+        stn_zr + deltap(3,:)];
+    
+    if strcmp(stn, 'wank');
+        wank_gps_coords = stn_single_gps_coords;
+    else
+        zugs_gps_coords = stn_single_gps_coords;
+    end
 end
 
-%% 3 (a): Correct satellite positions for Earth rotation during light
-%% travel time.
-[stn_xs, stn_ys, stn_zs, rho_sr] = correctLightTravelTime(stn_xs_raw, ...
-    stn_ys_raw, stn_zs_raw, stn_xr, stn_yr, stn_zr, earth_rot_rate, c);
+wank_apriori = [wank_xr;wank_yr;wank_zr];
+wank_error = wank_apriori - wank_gps_coords;
+zugs_apriori = [zugs_xr;zugs_yr;zugs_zr];
+zugs_error = zugs_apriori - zugs_gps_coords;
 
-%% 3 (b) Compute the derivates of the observation equation.
-% Todo: change this back to c? Need to adjust calculations below!
-dPdt = 1;
-dPdx = -(stn_xs - stn_xr) ./ rho_sr;
-dPdy = -(stn_ys - stn_yr) ./ rho_sr;
-dPdz = -(stn_zs - stn_zr) ./ rho_sr;
-% Correct pseudorange data with satellite clock correction.
-c1_corrected = stn_c1 + (c * stn_satt); % changed sign before bracket
-
-%% Calculate station coordinates for each epoch.
-[deltap, epsilon, sigmax, sigmay, sigmaz, sigmat] = ...
-    calcEpochCoordinates(dPdx, dPdy, dPdz, dPdt, c1_corrected, ...
-    rho_sr, epochs);
-stn_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
-    stn_zr + deltap(3,:)];
-
-%% For ex 2.2: Plot satellite positions to perhaps explain why y accuracy
-%% is better than x?
-% Drift may be because troposphere not yet corrected and not constant??
-
-%% B: 2.1 Single set of coordinates.
-[deltap, epsilon, sigma] = calcSingleCoordinates(dPdx, ...
-    dPdy, dPdz, dPdt, c1_corrected, rho_sr, epochs);
-stn_single_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
-    stn_zr + deltap(3,:)];
-
-%% Calculate tropospheric correction.
-tropo_corr = correctTroposphere(stn_c1, stn_satt, ...
-    stn_single_gps_coords, stn_xs, stn_ys, stn_zs, c);
-
-%% Part B, 2.3 Calculate relativity correction.
-relativistic_corr = correctRelativity(epochs, stn_xs, stn_ys, stn_zs, ...
-    earth_rot_rate, c);
-
-%% Apply corrections.
-c1_corrected = rho_sr + (c * stn_satt) + tropo_corr + relativistic_corr; 
-
-%% Recalculate receiver coordinates.
-[deltap, epsilon, sigma] = calcSingleCoordinates(dPdx, ...
-    dPdy, dPdz, dPdt, c1_corrected, rho_sr, epochs);
-stn_single_gps_coords = [stn_xr + deltap(1,:); stn_yr + deltap(2,:); ...
-    stn_zr + deltap(3,:)];
+distance_apriori = wank_apriori - zugs_apriori;
+distance_calc = wank_gps_coords - zugs_gps_coords;
+distance_error = distance_apriori - distance_calc;
+    
