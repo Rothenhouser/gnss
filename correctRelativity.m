@@ -12,9 +12,9 @@ inert_vel_z(length(epochs),:) = (stn_zs(length(epochs),:) - stn_zs(length(epochs
 
 for i = 2:length(epochs) - 1;
     % uses 2point finite differences
-    inert_vel_x(i,:) = (stn_xs(i+1,:) - stn_xs(i-1,:)) / 2*dt;
-    inert_vel_y(i,:) = (stn_ys(i+1,:) - stn_ys(i-1,:)) / 2*dt;
-    inert_vel_z(i,:) = (stn_zs(i+1,:) - stn_zs(i-1,:)) / 2*dt;   
+    inert_vel_x(i,:) = (stn_xs(i+1,:) - stn_xs(i-1,:)) / (2*dt);
+    inert_vel_y(i,:) = (stn_ys(i+1,:) - stn_ys(i-1,:)) / (2*dt);
+    inert_vel_z(i,:) = (stn_zs(i+1,:) - stn_zs(i-1,:)) / (2*dt);   
 end
 for i = 1:length(epochs);
     % Correct for earth's rotation
