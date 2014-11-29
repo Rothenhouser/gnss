@@ -1,4 +1,4 @@
-function [corrected] = correctTroposphere(c1, satt, single_gps_coords, ...
+function [tropo_corr] = correctTroposphere(c1, satt, single_gps_coords, ...
                                           xs, ys, zs, c)
 % Calculate cos(z), the tropospheric zenith angle for each epoch.
 % Need a single set of station coordinates
@@ -15,6 +15,4 @@ cos_z = (xr_gps./xyz) .* (xs - xr_gps)./rho_sr ...
     + (zr_gps./xyz) .* (zs - zr_gps)./rho_sr;
 % Tropospheric correction:
 tropo_corr = 2.3 ./ cos_z;
-% Apply correction.
-corrected = c1 + (c * satt) + tropo_corr; % Or subtract???
 end
