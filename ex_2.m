@@ -94,7 +94,7 @@ for stn = {'zugs', 'wank'};
         earth_rot_rate, c);
 
     %% Apply corrections.
-    c1_corrected = stn_c1 + (c * stn_satt) + tropo_corr + relativistic_corr; 
+    c1_corrected = stn_c1 + (c * stn_satt);% - tropo_corr + relativistic_corr;
     
     %% Recalculate receiver coordinates.
     [deltap, epsilon, sigma] = calcSingleCoordinates(dPdx, ...
