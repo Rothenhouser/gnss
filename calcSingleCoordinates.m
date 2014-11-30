@@ -16,8 +16,8 @@ for i = 1:ns:length(epochs)*ns;
     it = it + 1; 
 end
 % setup observation matrix
-c1_corrected_resh = reshape(c1_corrected,[],1);
-rho_sr_resh = reshape(rho_sr,[],1);
+c1_corrected_resh = reshape(transpose(c1_corrected),[],1);
+rho_sr_resh = reshape(transpose(rho_sr),[],1);
 deltay = c1_corrected_resh - rho_sr_resh;
 
 % Solve normal equation.
